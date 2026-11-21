@@ -188,20 +188,25 @@ def handle_feedback(args, store: FeedbackStore):
 
 
 def handle_rsi(args, cfg: Config, store: FeedbackStore):
+    guidelines_path = ".auto_review/guidelines.md"
+    if args.rsi_cmd == "show":
+        if os.path.exists(guidelines_path):
+            with open(guidelines_path, "r", encoding="utf-8") as f:
+                print(f.read().strip())
+        else:
+            print("No active guidelines synthesized yet. Run 'auto-review rsi optimize' after recording feedback.")
+        return
+
+    provider = getattr(args, "provider", None) or cfg.default_provider
     synth = RuleSynthesizer(
-        backend=get_model_backend(args.provider or cfg.default_provider),
-        store=store
+        backend=get_model_backend(provider),
+        store=store,
+        guidelines_path=guidelines_path
     )
     if args.rsi_cmd == "optimize":
         print("Running RSI Rule Synthesizer to distill feedback into guidelines...")
         res = synth.optimize_guidelines()
         print(res)
-    elif args.rsi_cmd == "show":
-        g = synth.load_active_guidelines()
-        if g:
-            print(g)
-        else:
-            print("No active guidelines synthesized yet. Run 'auto-review rsi optimize' after recording feedback.")
 
 
 def handle_config(args, cfg: Config):
